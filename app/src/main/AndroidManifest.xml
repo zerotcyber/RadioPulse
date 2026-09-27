@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+      ACCESS_FINE_LOCATION: required by getAllCellInfo() and requestCellInfoUpdate().
+      Android treats serving-cell identity as location data, so coarse location is
+      NOT sufficient - with only COARSE, cell identity fields come back redacted.
+      READ_PHONE_STATE: required by getDataNetworkType() and, on API 31+, by
+      registerTelephonyCallback() for TelephonyDisplayInfo (5G NSA detection).
+    -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+
+    <uses-feature
+        android:name="android.hardware.telephony"
+        android:required="true" />
+
+    <application
+        android:allowBackup="false"
+        android:label="CellProbe"
+        android:supportsRtl="true"
+        android:theme="@android:style/Theme.Material.Light">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="CellProbe">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

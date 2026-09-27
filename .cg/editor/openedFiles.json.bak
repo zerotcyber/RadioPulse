@@ -1,0 +1,21 @@
+{
+  "allFiles": [
+    {
+      "file": "/storage/emulated/0/CodeOnTheGoProjects/Feasibility test/app/src/main/AndroidManifest.xml",
+      "selection": {
+        "end": {
+          "column": 9,
+          "index": 986,
+          "line": 23
+        },
+        "start": {
+          "column": 9,
+          "index": 986,
+          "line": 23
+        }
+      }
+    }
+  ],
+  "projectPath": "/storage/emulated/0/CodeOnTheGoProjects/Feasibility test",
+  "selectedFile": "/storage/emulated/0/CodeOnTheGoProjects/Feasibility test/app/src/main/AndroidManifest.xml"
+}
