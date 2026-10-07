@@ -31,6 +31,9 @@ import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import com.example.cellprobe.netperf.NetPerfRunner
+import com.example.cellprobe.netperf.SimInfo
+import com.example.cellprobe.netperf.toJson
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -80,6 +83,8 @@ class MainActivity : ComponentActivity() {
     private lateinit var subscriptionManager: SubscriptionManager
     private lateinit var output: TextView
     private lateinit var pollButton: Button
+    private lateinit var netPerfButton: Button
+    private var netPerf: NetPerfRunner? = null
 
     private val handler = Handler(Looper.getMainLooper())
     private val executor = Executors.newSingleThreadExecutor()
@@ -117,6 +122,11 @@ class MainActivity : ComponentActivity() {
             setOnClickListener { togglePolling() }
         }
 
+        netPerfButton = Button(this).apply {
+            text = "Start NetPerf"
+            setOnClickListener { toggleNetPerf() }
+        }
+
         output = TextView(this).apply {
             typeface = Typeface.MONOSPACE
             textSize = 11f
@@ -138,6 +148,7 @@ class MainActivity : ComponentActivity() {
 
         root.addView(probeButton)
         root.addView(pollButton)
+        root.addView(netPerfButton)
         root.addView(scroll)
         setContentView(root)
 
@@ -148,6 +159,7 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
         polling = false
         handler.removeCallbacksAndMessages(null)
+        netPerf?.stop()
         executor.shutdown()
     }
 
@@ -237,6 +249,39 @@ class MainActivity : ComponentActivity() {
     }
 
     // ------------------------------------------------------------------ polling
+
+    private fun toggleNetPerf() {
+        val running = netPerf
+        if (running != null) {
+            running.stop()
+            netPerf = null
+            netPerfButton.text = "Start NetPerf"
+            return
+        }
+        val sims = activeSubscriptions().map {
+            SimInfo(it.subscriptionId, it.carrierName?.toString())
+        }
+        if (sims.isEmpty()) {
+            output.text = "NetPerf: no active subscriptions. Tap \"Probe once\" first " +
+                "to grant READ_PHONE_STATE.\n\n" + output.text
+            return
+        }
+        netPerf = NetPerfRunner(applicationContext, sims) { snap ->
+            val json = snap.toJson().toString()
+            Log.i("NetPerf", json)
+            appendNetPerf(json)
+            runOnUiThread { output.text = "NETPERF $json\n\n" + output.text }
+        }.also { it.start() }
+        netPerfButton.text = "Stop NetPerf"
+    }
+
+    private fun appendNetPerf(line: String) {
+        try {
+            File(getExternalFilesDir(null), "netperf.jsonl").appendText(line + "\n")
+        } catch (e: Exception) {
+            Log.w(TAG, "netperf write failed: ${e.message}")
+        }
+    }
 
     private fun togglePolling() {
         polling = !polling
