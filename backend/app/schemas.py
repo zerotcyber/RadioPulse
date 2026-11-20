@@ -1,4 +1,4 @@
-from typing import Self
+from typing import Self, Literal
 from pydantic import BaseModel, Field, model_validator
 
 class Summary(BaseModel):
@@ -68,6 +68,58 @@ class ThroughputMetrics(BaseModel):
 
         return self
 
+
+class Radio(BaseModel):
+    status: Literal["ok", "unavailable"]
+    reason: str | None 
+    observed_at_ms: int = Field(gt=0)
+    rat: Literal["LTE", "NR", "WCDMA", "GSM", "TDSCDMA", "CDMA", "UNKNOWN"] | None
+    mcc: str | None
+    mnc: str | None
+    rsrp: int | None = Field(ge=-160, le=0)
+    rsrq: int | None = Field(ge=-50, le=30)
+    sinr: int | None = Field(ge=-40, le=60)
+    level: int | None = Field(ge=0, le=4)
+    ci: int | None = Field(ge=0)
+    pci: int | None = Field(ge=0, le=1007)
+    tac: int | None = Field(ge=0, le=16777215)
+    earfcn: int | None = Field(ge=0)
+
+    @model_validator(mode="after")
+    def check_status(self) -> Self:
+        values = [self.rat, self.mcc, self.mnc, self.rsrp, self.rsrq, self.sinr,
+                  self.level, self.ci, self.pci, self.tac, self.earfcn]
+        if self.status == "unavailable":
+            if self.reason is None:
+                raise ValueError("reason is required when status is unavailable")
+            if any(v is not None for v in values):
+                raise ValueError("no radio values allowed when status is unavailable")
+        else:
+            if self.reason is not None:
+                raise ValueError("reason must be null when status is ok")
+            if self.rat is None:
+                raise ValueError("rat is required when status is ok")
+        return self
+
+    
+
+class NetPerf(BaseModel):
+    started_at_ms: int = Field(gt=0)
+    ended_at_ms: int = Field(gt=0)
+    network_acquired: bool
+    dns: DnsMetrics | None
+    latency: LatencyMetrics | None
+    throughput: ThroughputMetrics | None
+    error: str | None
+
+    @model_validator(mode="after")
+    def check_consistency(self) -> Self:
+        if self.ended_at_ms < self.started_at_ms:
+            raise ValueError("ended_at_ms is before started_at_ms")
+        blocks = (self.dns, self.latency, self.throughput)
+        if not self.network_acquired and any(b is not None for b in blocks):
+            raise ValueError("no measurements allowed when network_acquired is false")
+        return self
 
     
 
