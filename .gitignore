@@ -90,3 +90,10 @@ backend/.venv/
 **/__pycache__/
 *.pyc
 
+
+# Secrets and local data
+.env
+.env.*
+!.env.example
+*.jsonl
+cell_probe.csv
